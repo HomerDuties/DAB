@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MachineDab — bac à sable des états</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: system-ui, sans-serif; background: #121218; color: #e8e8f0;
+    margin: 0; padding: 24px;
+  }
+  h1 { font-size: 1.25rem; margin: 0 0 6px; }
+  h1 .bleu { color: #7c8bff; }
+  .sous-titre { color: #9aa0aa; font-size: .85rem; margin: 0 0 18px; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 18px; max-width: 1200px; align-items: start; }
+  .panneau {
+    background: #1c1c26; border: 1px solid #2b2b38; border-radius: 12px; padding: 16px;
+  }
+  .panneau h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #9aa0aa; margin: 0 0 10px; }
+  label { display: block; font-size: .75rem; color: #9aa0aa; margin: 10px 0 4px; }
+  select, textarea {
+    width: 100%; box-sizing: border-box; background: #101018; color: #e8e8f0;
+    border: 1px solid #2b2b38; border-radius: 8px; padding: 8px; font-size: .85rem;
+  }
+  .ligne-boutons { display: flex; gap: 10px; margin-top: 14px; }
+  .ligne-boutons button {
+    flex: 1; padding: 10px; border: 0; border-radius: 8px; cursor: pointer;
+    font-size: .85rem; font-weight: 600; color: #101018;
+  }
+  #btn-agir { background: #7c8bff; }
+  #btn-reset { background: #3a3a48; color: #e8e8f0; }
+  button:disabled { opacity: .5; cursor: wait; }
+  #historique { list-style: none; padding: 0; margin: 14px 0 0; font-size: .75rem; color: #9aa0aa; max-height: 180px; overflow: auto; }
+  #historique li { padding: 2px 0; border-bottom: 1px dashed #26262f; }
+  pre {
+    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace;
+    font-size: .76rem; background: #0f0f16; padding: 12px; border-radius: 8px;
+    margin: 0; max-height: 72vh; overflow: auto;
+  }
+  .signature { margin-top: 18px; font-size: .72rem; color: #5d5d6e; }
+</style>
+</head>
+<body>
+  <h1>🧪 <span class="bleu">MachineDab</span> — bac à sable des états <em>(provisoire)</em></h1>
+  <p class="sous-titre">
+    Chaque action <code>{ action, payload }</code> renvoie un <b>nouvel état</b> (à droite).
+    Parcours à tester : insérez la carte de Martin → code <b>1234</b> → menu → une des 5 opérations.
+  </p>
+  <main>
+    <section class="panneau">
+      <h2>🕹 Pilote</h2>
+      <form id="form-agir">
+        <label for="action">Action</label>
+        <select id="action"></select>
+        <label for="payload">Payload (JSON) — pré-rempli selon l'action</label>
+        <textarea id="payload" rows="3" spellcheck="false">{}</textarea>
+        <div class="ligne-boutons">
+          <button type="submit" id="btn-agir">➤ Envoyer l'action</button>
+          <button type="button" id="btn-reset">↺ Reset DAB</button>
+        </div>
+      </form>
+      <ul id="historique"></ul>
+    </section>
+    <section class="panneau">
+      <h2>📺 État courant renvoyé par la machine</h2>
+      <pre id="etat">(chargement…)</pre>
+    </section>
+  </main>
+  <p class="signature">Vue de débug provisoire — elle sera remplacée par la vraie UI des opérations 5.</p>
+<script>
+  // ---------------------------------------------------------------
+  // L'utilisateur pilote la machine réelle via le serveur :
+  // le serveur fait UNIQUEMENT agir / état (cf. web/server.js).
+  // ---------------------------------------------------------------
+  const EXEMPLES = {
+    insererCarte:       { payload: { carteId: "martin" },              label: "Insérer la carte (Martin)" },
+    chiffre:            { payload: { chiffre: "1" },                   label: "Taper un chiffre (remplacer '1')" },
+    effacer:            { payload: {},                                  label: "Effacer le dernier chiffre" },
+    valider:            { payload: {},                                  label: "Valider la saisie (code / montant)" },
+    annuler:            { payload: {},                                  label: "Annuler en cours de saisie" },
+    choisirOperation:   { payload: { operation: "consulter" },          label: "Choisir une opération (menu)" },
+    choisirCompte:      { payload: { label: "courant" },               label: "Choisir le compte source" },
+    choisirCompteCible: { payload: { label: "epargne" },               label: "Choisir le compte cible (virement)" },
+    choisirFacture:     { payload: { reference: "EDF-2026-001" },      label: "Choisir la facture (EDF 120 €)" },
+    continuer:          { payload: {},                                  label: "Continuer (retour au menu)" },
+    rendreCarte:        { payload: {},                                  label: "Rendre la carte (fin)" },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const select = $("action"), payload = $("payload"), etatEl = $("etat"), histo = $("historique");
+
+  // Alimente le sélecteur d'action.
+  Object.entries(EXEMPLES).forEach(([action, v]) => {
+    const opt = document.createElement("option");
+    opt.value = action;
+    opt.textContent = `${action}  —  ${v.label}`;
+    select.appendChild(opt);
+  });
+  select.addEventListener("change", () => {
+    payload.value = JSON.stringify(EXEMPLES[select.value].payload, null, 2);
+  });
+  select.dispatchEvent(new Event("change"));
+
+  function retablirBoutons() { $("btn-agir").disabled = false; $("btn-reset").disabled = false; }
+
+  function afficherEtat(etat, log) {
+    etatEl.textContent = JSON.stringify(etat, null, 2);
+    etatEl.style.color = etat.erreur ? "#ffb0b0" : "#bff5c9";
+    if (log) {
+      const li = document.createElement("li");
+      li.textContent = log;
+      histo.prepend(li);
+      while (histo.children.length > 20) histo.removeChild(histo.lastChild);
+    }
+  }
+
+  async function chargerEtat() {
+    const r = await fetch("/api/etat");
+    afficherEtat(await r.json());
+  }
+
+  async function jouerAction(action, payloadObj) {
+    const r = await fetch("/api/agir", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, payload: payloadObj || {} }),
+    });
+    afficherEtat(await r.json(), `${action}  ${JSON.stringify(payloadObj || {})}`);
+  }
+
+  $("form-agir").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("btn-agir").disabled = true;
+    let payloadObj;
+    try { payloadObj = JSON.parse(payload.value || "{}"); }
+    catch {
+      afficherEtat({ erreur: "Payload JSON invalide : vérifiez la zone de texte." }, "Payload invalide");
+      retablirBoutons(); return;
+    }
+    await jouerAction(select.value, payloadObj);
+    retablirBoutons();
+  });
+
+  $("btn-reset").addEventListener("click", async () => {
+    $("btn-reset").disabled = true;
+    const r = await fetch("/api/reset", { method: "POST" });
+    afficherEtat(await r.json(), "DAB réinitialisé");
+    retablirBoutons();
+  });
+
+  // Quelques raccourcis pratiques pour tester les 5 opérations sans remplir les
+  // payloads : window.jouer.code("1234"), window.jouer.operation("retirer")…
+  window.jouer = {
+    code: async (str) => { for (const c of String(str)) await jouerAction("chiffre", { chiffre: c }); },
+    valider: async () => jouerAction("valider", {}),
+    operation: async (nom) => jouerAction("choisirOperation", { operation: nom }),
+  };
+
+  chargerEtat();
+</script>
+</body>
+</html>

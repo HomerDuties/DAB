@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAB 406 — Distributeur Automatique de Billets</title>
+<!-- La vue est découpée en fichiers, pour l'apprentissage :
+     · dab.css               → tous les styles
+     · front-action-dealer.js → traduit les actions de l'utilisateur en requêtes HTTP (seul à
+                               parler au serveur : agir / etat / reset)
+     · dab-renderer.js        → le RENDU : un état reçu → la page (aucun réseau)
+     · dab-controller.js      → le PILOTE : écoute les clics, envoie les actions
+                                (aucun dessin)
+     Cet index.html ne contient QUE la structure du distributeur. -->
+<link rel="stylesheet" href="dab.css">
+</head>
+<body>
+  <div class="agence">
+    <p class="agence-texte">Distributeur automatique de billets</p>
+    <div class="dab">
+      <div class="dab-tete">
+        <span class="logo">🏦</span>
+        <span>BANQUE DU CLIENT · DISTRIBUTEUR <b>406</b></span>
+        <span class="pastille">✓ EN SERVICE</span>
+      </div>
+
+      <div class="ecran">
+        <div class="barre-statut">
+          <span id="horloge">--:--</span>
+          <span id="phase">—</span>
+        </div>
+        <div class="carte-banner" id="carteBanner" hidden>
+          <span>💳</span>
+          <span id="carteInfo"></span>
+        </div>
+        <div class="message" id="message">Connexion…</div>
+        <div class="erreur" id="erreur" hidden></div>
+        <div class="comptes" id="comptes"></div>
+        <div class="saisie-ecran" id="saisieEcran" hidden>
+          <span class="libelle" id="saisieLibelle"></span>
+          <span id="saisieValeur"></span>
+        </div>
+        <div class="options" id="options"></div>
+        <div class="recu" id="recu" hidden></div>
+      </div>
+
+      <div class="dab-bas">
+        <div class="pave" id="pave">
+          <button class="touche" data-chiffre="1">1</button>
+          <button class="touche" data-chiffre="2">2</button>
+          <button class="touche" data-chiffre="3">3</button>
+          <button class="touche" data-chiffre="4">4</button>
+          <button class="touche" data-chiffre="5">5</button>
+          <button class="touche" data-chiffre="6">6</button>
+          <button class="touche" data-chiffre="7">7</button>
+          <button class="touche" data-chiffre="8">8</button>
+          <button class="touche" data-chiffre="9">9</button>
+          <button class="touche effacer" id="toucheEffacer" title="Effacer le dernier chiffre">⌫</button>
+          <button class="touche" data-chiffre="0">0</button>
+          <span class="touche vide"></span>
+        </div>
+        <div class="lateral">
+          <button class="touche-vertical btn-valider" id="btnValider">VALIDER</button>
+          <button class="touche-vertical btn-annuler" id="btnAnnuler">ANNULER</button>
+          <div class="fente-wrap">
+            <div class="fente-titre">Carte bancaire</div>
+            <div class="fente">
+              <div class="carte-physique" id="cartePhysique"></div>
+            </div>
+            <div class="led" id="led"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="pied">
+      <a href="#" id="lienReset">↺ Réinitialiser le DAB</a>
+      <span class="sep">·</span>
+      <a href="/debug.html">Bac à sable — état brut (JSON)</a>
+    </p>
+  </div>
+
+<script src="front-action-dealer.js"></script>
+<script src="dab-renderer.js"></script>
+<script src="dab-controller.js"></script>
+</body>
+</html>

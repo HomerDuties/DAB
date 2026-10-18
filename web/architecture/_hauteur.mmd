@@ -1,0 +1,20 @@
+flowchart TB
+    A1["① Le pavé — l'écran où l'on clique<br/>index.html • dab-ui.js"]
+    A2["② front-action-dealer.js<br/>(le requêteur : fait les fetch)"]
+    A3["③ server.js (L133)<br/>(le pompiste : transporte)"]
+    A4["④ core-manager.js (L95)<br/>(le cerveau : joue le geste)"]
+    A5["⑤ DABOrchestrator.executer()<br/>../DAB/* (les vraies règles)"]
+    R1["⑥ etatCourant() L110<br/>(copie stricte de l'état)"]
+    R2["⑦ envoyerJson() L168<br/>(objet → texte JSON)"]
+    R3["⑧ client : response.json()<br/>(objet pur)"]
+    R4["⑨ UI : afficher(etat)<br/>(écran redessiné)"]
+    A1 --> A2
+    A2 --> A3
+    A3 --> A4
+    A4 --> A5
+    A5 -. "état modifié, soldes…" .-> R1
+    R1 --> R2
+    R2 --> R3
+    R3 --> R4
+    R4 -. "un nouveau clic repart du ①" .-> A1
+    linkStyle 4,8 stroke:#e63946,stroke-width:3px

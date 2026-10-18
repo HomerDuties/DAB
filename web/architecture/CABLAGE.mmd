@@ -1,0 +1,76 @@
+flowchart TB
+    %% =================================================================
+    %% DIAGRAMME DE CÂBLAGE / DÉPENDANCES — « qui new qui » (l'envers du décor)
+    %% Le schéma en 3 bandes montre des COUCHES ; ici on montre l'ASSEMBLAGE réel.
+    %% Flèche pleine = instancie / ordonne ;  flèche pointillée = création OU
+    %% dépendance cachée (visible seulement dans le code de la classe).
+    %% =================================================================
+
+    RACINE["🏗 server.js :: construireCore()<br/>LA RACINE DE COMPOSITION<br/>(L51→L90 : ≈ 14 « new » exposés en 40 lignes)"]:::root
+
+    subgraph D["① DONNÉES — instanciées par la racine (classes données)"]
+        PROF["ClientProfile<br/>scoreFiabilite 90"]:::data
+        COUR["Compte « courant »<br/>solde 1000 €"]:::data
+        EPAR["Compte « épargne »<br/>solde 500 €"]:::data
+        CLI["Client #1<br/>profil + comptes"]:::data
+        INFOC["InfoClient<br/>(nom, email…)"]:::source
+        CAR["CarteBancaire<br/>PIN 1234"]:::data
+        CEDF["Compte « edf »<br/>(créancier externe)"]:::data
+        FAC["Facture EDF-2026-001<br/>120 €"]:::data
+        ANN["annuaireClients<br/>{1: client}"]:::data
+    end
+
+    subgraph S["② SERVICES — 4 classes métier opérationnelles"]
+        VS["VirementService"]:::svc
+        DS["DepotService"]:::svc
+        RS["RetraitService"]:::svc
+        PFS["PaiementFactureService"]:::svc
+    end
+
+    subgraph O["③ ORCHESTRATION — Authenticateur + annuaire"]
+        AUTH["Authenticateur (3 essais)"]:::svc
+        ORC["DABOrchestrator<br/>auth + catalogueClients"]:::svc
+    end
+
+    M["④ CORE — CoreManager<br/>(état de l'appli + registres privés)"]:::core
+
+    OP["operations.js<br/>Session · Consultation · Dépôt · Retrait ·<br/>Virement · PaiementFacture —<br/>construites À LA VOLÉE par le core"]:::side
+
+    EXTRA["⚙️ main.js (CLI) câble EN PLUS :<br/>calculateurs de découvert, frais 0,5 %,<br/>plafonds (500 €/j, 5000 €), devises,<br/>virements inter-client / international,<br/>registres, carnet d'opérations…<br/>→ le domaine (32 fichiers) ≈ ×3 le câblage du serveur"]:::side
+
+    %% ===== la racine câble tout : 14 flèches pleines = le câblage VISIBLE =====
+    RACINE --> PROF
+    RACINE --> COUR
+    RACINE --> EPAR
+    RACINE --> CLI
+    RACINE --> CAR
+    RACINE --> CEDF
+    RACINE --> FAC
+    RACINE --> VS
+    RACINE --> DS
+    RACINE --> RS
+    RACINE --> PFS
+    RACINE --> AUTH
+    RACINE --> ORC
+    RACINE -->|"new CoreManager({ orchestreur, services, cartes, factures })"| M
+
+    %% ===== les liaisons CACHÉES (le schéma en 3 bandes ne les montre pas) =====
+    PFS -->|"possède virementService (injecté)"| VS
+    CLI -. "construit SON InfoClient tout seul<br/>(Fabrique → clients.json)" .-> INFOC
+    ORC -->|authenticateur| AUTH
+    ORC -->|catalogueClients| ANN
+    ANN --> CLI
+    ORC -. "carte → idProprietaire → client" .-> CLI
+    FAC -->|compteEmetteur| CEDF
+    M -->|"orchestreur (agir → executer)"| ORC
+    M -. "construit l'opération du geste à la volée" .-> OP
+    OP -->|"orchestreur.executer(operation)"| ORC
+    RACINE -. "le serveur n'expose QUE les 5 opérations simples" .-> EXTRA
+
+    %% ===== style : chaque couche une teinte (fond blanc du SVG) =====
+    classDef root fill:#d64545,stroke:#fff,color:#fff,stroke-width:2px
+    classDef data fill:#2c3e50,stroke:#7f9cbd,color:#fff
+    classDef svc fill:#1e5f5a,stroke:#7cc9bd,color:#fff
+    classDef core fill:#4b2e83,stroke:#c9aaf2,color:#fff
+    classDef source fill:#4a4a4a,stroke:#b0b0b0,color:#eee
+    classDef side fill:#3d2f00,stroke:#e0b84c,color:#ffeebb

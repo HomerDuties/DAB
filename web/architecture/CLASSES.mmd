@@ -1,0 +1,53 @@
+classDiagram
+    %% ===========================================================
+    %% STRUCTURE : qui détient quoi, qui appelle qui
+    %% ===========================================================
+    class UI {
+        +afficher(etat)
+        +creerAction(nom, payload)
+    }
+    class ClientVue {
+        +envoyer(action, payload)
+        +obtenirEtat()
+        +reinitialiser()
+        -fetchJSON()
+    }
+    class Serveur {
+        +core : CoreManager
+        +handle(req, res)
+        +lireCorpsJson(req)
+        +envoyerJson(res, objet)
+    }
+    class CoreManager {
+        +etat : Object
+        -gestionnaires : Map
+        +agir(action, payload)
+        +etatCourant()
+    }
+    class DomaineDAB {
+        +executer(operation)
+        +authentifier()
+        +retirer()
+    }
+    class DTOEtat {
+        +ecran
+        +message
+    }
+    UI ..> ClientVue : délègue les actions
+    ClientVue ..> Serveur : fetch HTTP /api/* (agir / etat / reset)
+    Serveur ..> CoreManager : core.agir(action, payload)
+    CoreManager ..> DomaineDAB : DABOrchestrator.executer(operation)
+    DomaineDAB --> CoreManager : soldes / reçu
+    CoreManager --> Serveur : etatCourant() (copie stricte)
+    Serveur --> ClientVue : texte JSON
+    ClientVue --> UI : objet état (JSON.parse)
+    CoreManager ..> DTOEtat : produit la copie
+    Serveur ..> DTOEtat : transporte
+    ClientVue ..> DTOEtat : parse
+    UI ..> DTOEtat : lit pour afficher
+    note for UI "❗ la vue : ne fait qu'afficher(etat)"
+    note for ClientVue "❗ le SEUL fichier de la vue qui parle au réseau"
+    note for Serveur "❗ le transport : ne contient AUCUNE règle métier"
+    note for CoreManager "❗ le cerveau : ne voit jamais le réseau ni l'écran"
+    note for DomaineDAB "❗ le métier : les vraies règles (../DAB/*)"
+    note for DTOEtat "l'objet qui voyage sur le réseau (sérialisé en JSON)"

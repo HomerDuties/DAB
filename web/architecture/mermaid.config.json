@@ -1,0 +1,7 @@
+{
+  "theme": "dark",
+  "themeVariables": {
+    "lineColor": "#e63946",
+    "signalColor": "#e63946"
+  }
+}

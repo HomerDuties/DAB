@@ -1,0 +1,22 @@
+sequenceDiagram
+    autonumber
+    participant U as Toi (clics sur l'écran)
+    participant UI as dab-ui.js (peintre)
+    participant CL as front-action-dealer.js (requêteur)
+    participant SV as server.js (pompiste)
+    participant MA as core-manager.js (cerveau)
+    participant DO as domaine DAB (métier)
+
+    U->>UI: "clic touche « 4 » du pavé (dab-ui.js L127)"
+    UI->>CL: "envoyer('chiffre', { chiffre: '4' })  (dab-ui.js L32)"
+    CL->>SV: "fetch POST /api/agir  → body = JSON.stringify({ action, payload })  (client L46-49)"
+    Note over SV: "lireCorpsJson L154 → brut accumulé → JSON.parse L161"
+    SV->>MA: "core.agir('chiffre', { chiffre: '4' })  (server.js L133)"
+    Note over MA: "agir L95 → _gestionnaires['chiffre'].fn(payload) L104 → modifie this.etat"
+    MA->>DO: "(si opération) construire l'opération → DABOrchestrator.executer(operation)"
+    DO-->>MA: "reçu du domaine (soldes, reçu…)"
+    MA-->>SV: "etatCourant() L110 → copie stricte L111"
+    SV-->>CL: "envoyerJson() L168 → texte JSON"
+    CL-->>UI: "response.json() L34 → objet état"
+    UI-->>U: "afficher(etat) L45 : l'écran est redessiné"
+    Note over MA: "le PIN reste un secret privé : l'état renvoyé ne le contient jamais"

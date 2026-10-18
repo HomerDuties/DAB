@@ -1,0 +1,16 @@
+[
+  {
+    "iban": "IBAN_1",
+    "label": "courant",
+    "type": "courant",
+    "solde": 1000,
+    "clientId": 1
+  },
+  {
+    "iban": "IBAN_2",
+    "label": "epargne",
+    "type": "epargne",
+    "solde": 500,
+    "clientId": 1
+  }
+]

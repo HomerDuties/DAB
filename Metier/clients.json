@@ -1,0 +1,7 @@
+{
+  "clients": [
+    { "id": 1, "nom": "Martin", "email": "martin@mail.fr", "adresse": "12 rue des Lilas, Paris", "tel": "0600000001" },
+    { "id": 2, "nom": "Durand", "email": "durand@mail.fr", "adresse": "8 avenue Verte, Lyon", "tel": "0600000002" },
+    { "id": 3, "nom": "Dupond", "email": "dupond@mail.fr", "adresse": "8 Place du Soleil, Marseille", "tel": "0600000003" }
+  ]
+}

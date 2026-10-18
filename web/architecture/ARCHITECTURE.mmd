@@ -1,0 +1,17 @@
+flowchart TB
+    subgraph ECR["🟨 L'UI / l'ÉCRAN — l'entrée et la sortie du trajet"]
+        direction LR
+        A1["① Le pavé — l'écran où l'on clique<br/>index.html • dab-ui.js"]
+    end
+    subgraph DEM["🟩 La DEMANDE — part du clic vers les règles (flèches pleines ➡)"]
+        direction LR
+        A2["② front-action-dealer.js<br/>(le requêteur : fait les fetch)"] --> A3["③ server.js (L133)<br/>(le pompiste : transporte)"] --> A4["④ core-manager.js (L95)<br/>(le cerveau : joue le geste)"] --> A5["⑤ DABOrchestrator.executer()<br/>../DAB/* (les vraies règles)"]
+    end
+    subgraph REP["🟦 La RÉPONSE — revient vers l'écran (flèches pointillées ➡)"]
+        direction LR
+        R1["⑥ etatCourant() L110<br/>(copie stricte de l'état)"] --> R2["⑦ envoyerJson() L168<br/>(objet → texte JSON)"] --> R3["⑧ client : response.json()<br/>(objet pur)"] --> R4["⑨ UI : afficher(etat)<br/>(écran redessiné)"]
+    end
+    ECR --> DEM
+    DEM -. "état modifié, soldes…" .-> REP
+    REP -. "un nouveau clic repart du ①" .-> ECR
+    linkStyle 7,8 stroke:#e63946,stroke-width:3px
